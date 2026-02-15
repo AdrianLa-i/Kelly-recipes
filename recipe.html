@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家常美味四重奏 - 互动食谱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .serif {
+            font-family: 'Noto Serif SC', serif;
+        }
+        .step-item {
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slideIn 0.5s forwards;
+        }
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .ingredient-row {
+            transition: all 0.3s ease;
+        }
+        .ingredient-row:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+        
+        /* Custom Slider with Black Track */
+        .servings-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+        }
+        .servings-slider::-webkit-slider-runnable-track {
+            background: #1f2937;
+            height: 6px;
+            border-radius: 3px;
+            border: none;
+        }
+        .servings-slider::-moz-range-track {
+            background: #1f2937;
+            height: 6px;
+            border-radius: 3px;
+            border: none;
+        }
+        .servings-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #3b82f6;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            margin-top: -9px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+            border: 2px solid white;
+        }
+        .servings-slider::-moz-range-thumb {
+            background: #3b82f6;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: 2px solid white;
+            cursor: pointer;
+        }
+        .servings-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+        
+        .cooking-timer {
+            font-variant-numeric: tabular-nums;
+        }
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Image styling */
+        .selector-image {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .dish-selector:hover .selector-image {
+            transform: scale(1.05);
+        }
+        
+        .dish-selector.active .selector-image {
+            border-color: currentColor;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-fallback {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-20">
+
+    <!-- Hero Section -->
+    <header class="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white py-12 px-4 shadow-2xl relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-10"></div>
+        <div class="max-w-6xl mx-auto relative z-10 text-center">
+            <h1 class="serif text-4xl md:text-6xl font-bold mb-4 tracking-wide">啊秋家常菜食谱</h1>
+            <p class="text-lg md:text-xl opacity-90 font-light">根据人数自动调整份量，让烹饪变得简单</p>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent"></div>
+    </header>
+
+    <!-- Controls Section -->
+    <div class="max-w-6xl mx-auto px-4 -mt-8 relative z-20">
+        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 mb-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex-1 w-full">
+                    <label class="block text-gray-700 font-semibold mb-3 text-lg">用餐人数</label>
+                    <div class="flex items-center gap-4">
+                        <span class="text-3xl font-bold text-blue-600 w-12 text-center" id="servingsDisplay">4</span>
+                        <span class="text-gray-500 font-medium">人份</span>
+                        <div class="flex-1 mx-4 relative">
+                            <div class="absolute top-1/2 left-0 right-0 h-1.5 bg-gray-800 rounded-full -translate-y-1/2 pointer-events-none"></div>
+                            <input type="range" min="1" max="12" value="4" class="servings-slider w-full relative z-10" id="servingsSlider">
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-2 px-16 font-medium">
+                        <span>1人</span>
+                        <span>6人</span>
+                        <span>12人</span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="quickSet(2)" class="px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition text-sm font-medium border border-gray-300">双人餐</button>
+                    <button onclick="quickSet(4)" class="px-4 py-2 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition text-sm font-medium border border-blue-300">家庭餐</button>
+                    <button onclick="quickSet(8)" class="px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition text-sm font-medium border border-gray-300">聚餐</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dish Selector with Images -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <button onclick="selectDish(0)" class="dish-selector p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition text-center border-2 border-transparent hover:border-orange-400" data-index="0">
+                <img src="./maxresdefault.jpg" alt="小酥肉" class="selector-image mx-auto mb-3 object-cover" onerror="this.parentElement.innerHTML='<div class=\'selector-image mx-auto mb-3 image-fallback\'>🥩</div><div class=\'font-bold text-gray-800 text-sm md:text-base\'>小酥肉</div>'">
+                <div class="font-bold text-gray-800 text-sm md:text-base">小酥肉</div>
+            </button>
+            <button onclick="selectDish(1)" class="dish-selector p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition text-center border-2 border-transparent hover:border-blue-400" data-index="1">
+                <img src="./WhatsApp Image 2026-02-15 at 13.20.07.jpeg" alt="咸蛋黄炒鱿鱼" class="selector-image mx-auto mb-3 object-cover" onerror="this.parentElement.innerHTML='<div class=\'selector-image mx-auto mb-3 image-fallback\'>🦑</div><div class=\'font-bold text-gray-800 text-sm md:text-base\'>咸蛋黄炒鱿鱼</div>'">
+                <div class="font-bold text-gray-800 text-sm md:text-base">咸蛋黄炒鱿鱼</div>
+            </button>
+            <button onclick="selectDish(2)" class="dish-selector p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition text-center border-2 border-transparent hover:border-yellow-400" data-index="2">
+                <img src="./photo.jpg" alt="香米饭" class="selector-image mx-auto mb-3 object-cover" onerror="this.parentElement.innerHTML='<div class=\'selector-image mx-auto mb-3 image-fallback\'>🍚</div><div class=\'font-bold text-gray-800 text-sm md:text-base\'>香米饭</div>'">
+                <div class="font-bold text-gray-800 text-sm md:text-base">香米饭</div>
+            </button>
+            <button onclick="selectDish(3)" class="dish-selector p-4 rounded-xl bg-white shadow-md hover:shadow-lg transition text-center border-2 border-transparent hover:border-green-400" data-index="3">
+                <img src="./images.jpg" alt="莲藕花生汤" class="selector-image mx-auto mb-3 object-cover" onerror="this.parentElement.innerHTML='<div class=\'selector-image mx-auto mb-3 image-fallback\'>🥜</div><div class=\'font-bold text-gray-800 text-sm md:text-base\'>莲藕花生汤</div>'">
+                <div class="font-bold text-gray-800 text-sm md:text-base">莲藕花生汤</div>
+            </button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="recipeContainer" class="bg-white rounded-3xl shadow-2xl overflow-hidden min-h-[600px]">
+            <!-- Content injected by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Local image paths - using ./ for same folder
+        const imagePaths = [
+            './maxresdefault.jpg',
+            './WhatsApp Image 2026-02-15 at 13.20.07.jpeg',
+            './photo.jpg',
+            './images.jpg'
+        ];
+
+        // Recipe Data
+        const recipes = [
+            {
+                name: "小酥肉",
+                image: './maxresdefault.jpg',
+                color: "orange",
+                baseServings: 4,
+                time: "40分钟",
+                difficulty: "中等",
+                calories: "320 kcal/份",
+                description: "外酥里嫩，香气四溢的经典川菜，金黄酥脆的口感让人欲罢不能",
+                ingredients: [
+                    { name: "五花肉", amount: 400, unit: "g", category: "主料" },
+                    { name: "鸡蛋", amount: 2, unit: "个", category: "辅料" },
+                    { name: "红薯淀粉", amount: 80, unit: "g", category: "辅料" },
+                    { name: "花椒粉", amount: 5, unit: "g", category: "调料" },
+                    { name: "料酒", amount: 15, unit: "ml", category: "调料" },
+                    { name: "盐", amount: 5, unit: "g", category: "调料" },
+                    { name: "食用油", amount: 500, unit: "ml", category: "其他", note: "实耗约50ml" }
+                ],
+                steps: [
+                    { title: "腌制肉片", desc: "五花肉切成0.5cm厚的片，加入料酒、盐、花椒粉腌制15分钟", time: 15, tip: "切薄一点更酥脆" },
+                    { title: "调制面糊", desc: "鸡蛋打散，加入红薯淀粉搅拌成糊状，静置10分钟", time: 10, tip: "面糊要浓稠能挂住肉" },
+                    { title: "裹糊", desc: "将腌好的肉片均匀裹上面糊", time: 5, tip: "确保每片肉都裹满" },
+                    { title: "初炸定型", desc: "油温160°C，下入肉片炸至微黄捞出", time: 5, tip: "不要一次放太多，避免粘连" },
+                    { title: "复炸酥脆", desc: "油温升至180°C，复炸30秒至金黄酥脆", time: 3, tip: "高温复炸是酥脆的关键" },
+                    { title: "装盘", desc: "捞出沥油，撒上椒盐或辣椒粉即可", time: 2, tip: "趁热吃口感最佳" }
+                ]
+            },
+            {
+                name: "咸蛋黄炒鱿鱼",
+                image: './WhatsApp Image 2026-02-15 at 13.20.07.jpeg',
+                color: "blue",
+                baseServings: 4,
+                time: "20分钟",
+                difficulty: "简单",
+                calories: "180 kcal/份",
+                description: "咸香鲜美，鱿鱼Q弹下饭神器，咸蛋黄的沙糯口感完美包裹鱿鱼",
+                ingredients: [
+                    { name: "鲜鱿鱼", amount: 500, unit: "g", category: "主料" },
+                    { name: "咸蛋黄", amount: 4, unit: "个", category: "主料" },
+                    { name: "洋葱", amount: 1, unit: "个", category: "辅料" },
+                    { name: "青葱", amount: 3, unit: "根", category: "辅料" },
+                    { name: "姜片", amount: 5, unit: "片", category: "辅料" },
+                    { name: "料酒", amount: 10, unit: "ml", category: "调料" },
+                    { name: "盐", amount: 2, unit: "g", category: "调料", note: "少许，蛋黄已有咸味" }
+                ],
+                steps: [
+                    { title: "处理鱿鱼", desc: "鱿鱼洗净切圈，沸水加料酒焯烫30秒捞出", time: 5, tip: "时间不宜长，保持鲜嫩" },
+                    { title: "准备配料", desc: "洋葱切块，青葱切段，咸蛋黄压碎备用", time: 5, tip: "蛋黄越碎越容易起泡" },
+                    { title: "炒蛋黄", desc: "热油小火，下咸蛋黄炒至起泡出沙", time: 3, tip: "必须小火，避免糊锅" },
+                    { title: "炒鱿鱼", desc: "加入鱿鱼快速翻炒，让蛋黄均匀包裹", time: 2, tip: "大火快炒保持弹性" },
+                    { title: "加配料", desc: "加入洋葱、姜片翻炒至洋葱变软", time: 3, tip: "洋葱保持一点脆度更好吃" },
+                    { title: "出锅", desc: "撒入葱段，快速炒匀装盘", time: 2, tip: "葱要最后放保持翠绿" }
+                ]
+            },
+            {
+                name: "香米饭",
+                image: './photo.jpg',
+                color: "yellow",
+                baseServings: 4,
+                time: "30分钟",
+                difficulty: "简单",
+                calories: "150 kcal/份",
+                description: "粒粒分明，软糯香甜的完美米饭，每一口都是幸福的味道",
+                ingredients: [
+                    { name: "大米", amount: 300, unit: "g", category: "主料" },
+                    { name: "清水", amount: 450, unit: "ml", category: "其他", note: "米水比例1:1.5" },
+                    { name: "食用油", amount: 5, unit: "ml", category: "其他", note: "可选，增加光泽" },
+                    { name: "盐", amount: 2, unit: "g", category: "调料", note: "可选" }
+                ],
+                steps: [
+                    { title: "淘米", desc: "大米轻柔淘洗2-3次，至水基本清澈", time: 3, tip: "不要过度搓洗，保留营养" },
+                    { title: "浸泡", desc: "加水浸泡20分钟，让米粒充分吸水", time: 20, tip: "浸泡后米饭更饱满" },
+                    { title: "煮饭", desc: "放入电饭煲，按标准煮饭程序", time: 25, tip: "跳闸后不要立即开盖" },
+                    { title: "焖饭", desc: "保温状态焖10分钟，让水分均匀分布", time: 10, tip: "焖饭步骤不可省略" },
+                    { title: "翻松", desc: "用饭勺轻轻翻松，散去多余水汽", time: 2, tip: "动作要轻，避免压碎米粒" }
+                ]
+            },
+            {
+                name: "莲藕花生汤",
+                image: './images.jpg',
+                color: "green",
+                baseServings: 4,
+                time: "90分钟",
+                difficulty: "简单",
+                calories: "120 kcal/份",
+                description: "清甜滋润，补血养颜的养生汤品，莲藕粉糯花生香浓",
+                ingredients: [
+                    { name: "莲藕", amount: 400, unit: "g", category: "主料" },
+                    { name: "花生", amount: 100, unit: "g", category: "主料" },
+                    { name: "红枣", amount: 6, unit: "颗", category: "辅料" },
+                    { name: "枸杞", amount: 10, unit: "g", category: "辅料" },
+                    { name: "猪骨/排骨", amount: 300, unit: "g", category: "主料", note: "可选，素版可不加" },
+                    { name: "姜片", amount: 3, unit: "片", category: "辅料" },
+                    { name: "盐", amount: 5, unit: "g", category: "调料" }
+                ],
+                steps: [
+                    { title: "浸泡花生", desc: "花生提前浸泡2小时（或开水浸泡30分钟）", time: 5, tip: "提前准备，缩短煮汤时间" },
+                    { title: "处理莲藕", desc: "莲藕去皮切滚刀块，泡淡盐水防氧化", time: 5, tip: "切大块耐煮，口感粉糯" },
+                    { title: "焯水", desc: "猪骨冷水下锅焯水去血沫，洗净备用", time: 10, tip: "冷水下锅才能去净血水" },
+                    { title: "炖煮", desc: "所有材料（除枸杞）入砂锅，大火烧开转小火煲1小时", time: 60, tip: "小火慢煲味道更浓郁" },
+                    { title: "加枸杞", desc: "加入枸杞继续煲10分钟", time: 10, tip: "枸杞不宜久煮，保持营养" },
+                    { title: "调味", desc: "加盐调味，关火焖5分钟即可", time: 5, tip: "盐最后放，肉质更嫩" }
+                ]
+            }
+        ];
+
+        let currentServings = 4;
+        let currentDish = 0;
+        let activeTimers = {};
+
+        function init() {
+            updateServingsDisplay();
+            renderDish();
+        }
+
+        function quickSet(num) {
+            currentServings = num;
+            document.getElementById('servingsSlider').value = num;
+            updateServingsDisplay();
+            renderDish();
+        }
+
+        document.getElementById('servingsSlider').addEventListener('input', (e) => {
+            currentServings = parseInt(e.target.value);
+            updateServingsDisplay();
+            renderDish();
+        });
+
+        function updateServingsDisplay() {
+            document.getElementById('servingsDisplay').textContent = currentServings;
+        }
+
+        function selectDish(index) {
+            currentDish = index;
+            document.querySelectorAll('.dish-selector').forEach((el, i) => {
+                if (i === index) {
+                    el.classList.add('ring-4', 'ring-opacity-50', 
+                        index === 0 ? 'ring-orange-400' :
+                        index === 1 ? 'ring-blue-400' :
+                        index === 2 ? 'ring-yellow-400' : 'ring-green-400'
+                    );
+                    el.classList.add('bg-gray-50', 'active');
+                } else {
+                    el.classList.remove('ring-4', 'ring-opacity-50', 'ring-orange-400', 'ring-blue-400', 'ring-yellow-400', 'ring-green-400', 'bg-gray-50', 'active');
+                }
+            });
+            renderDish();
+        }
+
+        function calculateAmount(baseAmount, unit) {
+            const ratio = currentServings / 4;
+            let calculated = baseAmount * ratio;
+            
+            if (unit === 'g' || unit === 'ml') {
+                calculated = Math.round(calculated / 5) * 5;
+            } else if (unit === '个' || unit === '片' || unit === '颗' || unit === '根') {
+                calculated = Math.round(calculated);
+                if (calculated < 1) calculated = 1;
+            }
+            return calculated;
+        }
+
+        function renderDish() {
+            const recipe = recipes[currentDish];
+            const container = document.getElementById('recipeContainer');
+            
+            const colorClasses = {
+                orange: 'from-orange-400 to-red-500',
+                blue: 'from-blue-400 to-indigo-500',
+                yellow: 'from-yellow-400 to-orange-500',
+                green: 'from-green-400 to-teal-500'
+            };
+
+            const borderColors = {
+                orange: 'border-orange-500',
+                blue: 'border-blue-500',
+                yellow: 'border-yellow-500',
+                green: 'border-green-500'
+            };
+
+            const html = `
+                <div class="fade-in">
+                    <div class="relative h-64 md:h-80 overflow-hidden bg-gray-200">
+                        <div class="absolute inset-0 bg-gradient-to-r ${colorClasses[recipe.color]} opacity-90 z-10"></div>
+                        <img src="${recipe.image}" 
+                             class="hero-image opacity-40 mix-blend-overlay" 
+                             alt="${recipe.name}"
+                             onerror="this.style.display='none'; this.parentElement.querySelector('.image-fallback-bg').style.display='flex';">
+                        <div class="image-fallback-bg absolute inset-0 ${colorClasses[recipe.color]} hidden items-center justify-center text-white text-6xl font-bold z-0">
+                            ${recipe.name[0]}
+                        </div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent z-20"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-6 md:p-10 z-30 text-white">
+                            <div class="max-w-4xl">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium border border-white/30">${recipe.difficulty}</span>
+                                    <span class="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium border border-white/30">${recipe.time}</span>
+                                </div>
+                                <h2 class="serif text-3xl md:text-5xl font-bold mb-3">${recipe.name}</h2>
+                                <p class="text-lg opacity-95 leading-relaxed max-w-2xl">${recipe.description}</p>
+                                <div class="mt-4 flex items-center gap-2 text-sm font-medium bg-white/10 inline-flex px-4 py-2 rounded-full backdrop-blur-sm border border-white/20">
+                                    <span>👥</span>
+                                    <span>当前份量：${currentServings}人份</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-0">
+                        <div class="p-8 bg-gray-50 border-r border-gray-200">
+                            <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <span class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg">📝</span>
+                                食材清单
+                            </h3>
+                            
+                            ${['主料', '辅料', '调料', '其他'].map(cat => {
+                                const items = recipe.ingredients.filter(i => i.category === cat);
+                                if (items.length === 0) return '';
+                                return `
+                                    <div class="mb-6">
+                                        <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                            <span class="w-2 h-2 rounded-full bg-${recipe.color}-500"></span>
+                                            ${cat}
+                                        </h4>
+                                        <div class="space-y-2">
+                                            ${items.map(ing => `
+                                                <div class="ingredient-row flex justify-between items-center p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                                    <span class="font-medium text-gray-700 text-lg">${ing.name}</span>
+                                                    <div class="text-right">
+                                                        <span class="font-bold text-${recipe.color}-600 text-xl">${calculateAmount(ing.amount, ing.unit)}</span>
+                                                        <span class="text-gray-500 text-sm ml-1 font-medium">${ing.unit}</span>
+                                                        ${ing.note ? `<div class="text-xs text-gray-400 mt-1 max-w-[150px]">${ing.note}</div>` : ''}
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                            
+                            <div class="mt-8 p-4 bg-${recipe.color}-50 rounded-xl border border-${recipe.color}-200">
+                                <div class="flex items-center gap-2 text-${recipe.color}-800 font-bold mb-2">
+                                    <span>💡</span>
+                                    <span>烹饪小贴士</span>
+                                </div>
+                                <p class="text-sm text-${recipe.color}-700 leading-relaxed">
+                                    本食谱基于${recipe.baseServings}人份设计，当前已自动调整为${currentServings}人份。所有食材比例已重新计算，请按需准备。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="p-8">
+                            <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                                <span class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-lg">👨‍🍳</span>
+                                烹饪步骤
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                ${recipe.steps.map((step, idx) => `
+                                    <div class="step-item bg-white border-l-4 ${borderColors[recipe.color]} rounded-r-xl p-5 shadow-sm hover:shadow-md transition relative group" style="animation-delay: ${idx * 0.1}s">
+                                        <div class="flex items-start gap-4">
+                                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-${recipe.color}-100 text-${recipe.color}-600 font-bold flex items-center justify-center text-lg border-2 border-${recipe.color}-200">
+                                                ${idx + 1}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="font-bold text-gray-800 mb-2 text-lg">${step.title}</h4>
+                                                <p class="text-gray-600 leading-relaxed mb-3">${step.desc}</p>
+                                                <div class="flex items-center justify-between flex-wrap gap-2">
+                                                    <span class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                                                        💡 ${step.tip}
+                                                    </span>
+                                                    <button onclick="toggleTimer(${idx}, ${step.time})" id="timer-${idx}" class="text-xs px-4 py-2 rounded-full bg-gray-100 hover:bg-${recipe.color}-100 text-gray-600 hover:text-${recipe.color}-600 transition flex items-center gap-2 font-medium border border-gray-200 hover:border-${recipe.color}-300">
+                                                        <span>⏱️</span>
+                                                        <span class="cooking-timer">${step.time}分钟</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="timer-display-${idx}" class="hidden mt-4 p-4 bg-gray-900 text-white rounded-lg text-center font-mono text-2xl shadow-inner">
+                                            00:00
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function toggleTimer(stepIndex, minutes) {
+            const btn = document.getElementById(`timer-${stepIndex}`);
+            const display = document.getElementById(`timer-display-${stepIndex}`);
+            
+            if (activeTimers[stepIndex]) {
+                clearInterval(activeTimers[stepIndex].interval);
+                delete activeTimers[stepIndex];
+                btn.classList.remove('bg-red-100', 'text-red-600', 'border-red-300');
+                btn.classList.add('bg-gray-100', 'text-gray-600', 'border-gray-200');
+                display.classList.add('hidden');
+                btn.querySelector('span:last-child').textContent = `${minutes}分钟`;
+            } else {
+                let seconds = minutes * 60;
+                display.classList.remove('hidden');
+                btn.classList.remove('bg-gray-100', 'text-gray-600', 'border-gray-200');
+                btn.classList.add('bg-red-100', 'text-red-600', 'border-red-300');
+                
+                activeTimers[stepIndex] = {
+                    interval: setInterval(() => {
+                        seconds--;
+                        const mins = Math.floor(seconds / 60);
+                        const secs = seconds % 60;
+                        display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                        btn.querySelector('span:last-child').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                        
+                        if (seconds <= 0) {
+                            clearInterval(activeTimers[stepIndex].interval);
+                            delete activeTimers[stepIndex];
+                            display.textContent = "时间到！";
+                            display.classList.remove('bg-gray-900');
+                            display.classList.add('bg-green-600');
+                            btn.querySelector('span:last-child').textContent = "完成";
+                            display.style.animation = "pulse 0.5s 4";
+                        }
+                    }, 1000)
+                };
+            }
+        }
+
+        // Initialize
+        init();
+        selectDish(0);
+    </script>
+</body>
+</html>
